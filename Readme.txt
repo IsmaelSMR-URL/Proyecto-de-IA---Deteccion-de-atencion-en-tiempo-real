@@ -30,7 +30,7 @@ Bucle Principal de Video:
 
 Se abre la cámara web.
 En cada fotograma:
-Se realiza el seguimiento facial y de manos con MediaPipe.
+Se realiza el seguimiento facial
 Se calcula el EAR para ambos ojos para detectar si están cerrados. Si los ojos permanecen cerrados por un cierto número de frames, se considera "cansancio" y se muestra una alerta.
 Se rastrea la posición horizontal del rostro. Si el rostro se desvía demasiado del centro por un tiempo, se considera que la persona está "mirando a otro lado" y se muestra una alerta.
 Se lleva un contador de frames consecutivos de falta de atención (ojos cerrados O mirando a otro lado). Si la falta de atención persiste por un tiempo prolongado, se activa una "alerta persistente".

@@ -112,15 +112,22 @@ while cap.isOpened():
     results_hands = hands.process(image)
 
     # --- Detección de objetos (celulares) ---
-    if interpreter and CELL_PHONE_CLASS_ID != -1:
+    if interpreter and CELL_PHONE_CLASS_ID != -1:  
         try:
-            img_resized = cv2.resize(image, (input_details[0]['shape'][1], input_details[0]['shape'][2]))
-            input_data = np.expand_dims(img_resized, axis=0).astype(np.float32)
+            img_resized = cv2.resize(image, (300, 300))  # Resize to 300x300
+            img_resized = cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB) # Convert to RGB
+            input_data = np.expand_dims(img_resized, axis=0).astype(np.uint8)
+
+            # Quantization-aware preprocessing
+            input_scale, input_zero_point = input_details[0]['quantization']
+            input_data = input_scale * (input_data - input_zero_point)
+
             interpreter.set_tensor(input_details[0]['index'], input_data)
             interpreter.invoke()
-            detections = interpreter.get_tensor(output_details[0]['index'])[0] # Shape: (num_detections, 4)
-            detection_classes = interpreter.get_tensor(output_details[1]['index'])[0] # Shape: (num_detections,)
-            detection_scores = interpreter.get_tensor(output_details[2]['index'])[0] # Shape: (num_detections,)
+
+            detections = interpreter.get_tensor(output_details[0]['index'])[0]
+            detection_classes = interpreter.get_tensor(output_details[1]['index'])[0]
+            detection_scores = interpreter.get_tensor(output_details[2]['index'])[0]
 
             for i in range(len(detections)):
                 if detection_scores[i] > 0.5 and int(detection_classes[i]) == CELL_PHONE_CLASS_ID:
@@ -129,13 +136,13 @@ while cap.isOpened():
                     xmax = int(xmax * w)
                     ymin = int(ymin * h)
                     ymax = int(ymax * h)
-                    cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (255, 0, 0), 2) # Dibujar un rectángulo azul alrededor del celular
+                    cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (255, 0, 0), 2)
                     cv2.putText(image, 'Celular', (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
                     update_status("Usando celular")
-                    break # Solo detectamos un celular por ahora
+                    break
             else:
                 if status_label_text.get() == "Usando celular":
-                    update_status("Atento") # Volver a atento si ya no se detecta celular
+                    update_status("Atento")
         except Exception as e:
             print(f"Error durante la detección de objetos: {e}")
 
@@ -260,6 +267,8 @@ while cap.isOpened():
     root.update_idletasks()
     if cv2.waitKey(5) & 0xFF == 27:
         break
+
+
 
 cap.release()
 cv2.destroyAllWindows()
